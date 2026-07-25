@@ -10,9 +10,9 @@ class InventoryRepository:
 
     async def get_all_towers_with_units(self) -> List[Tower]:
         result = await self.db.execute(
-            select(Tower).order_by(Tower.id).unique()
+            select(Tower).order_by(Tower.id)
         )
-        return list(result.scalars().all())
+        return list(result.unique().scalars().all())
 
     async def get_unit_by_id(self, unit_id: int) -> Unit | None:
         result = await self.db.execute(

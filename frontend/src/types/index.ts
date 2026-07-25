@@ -64,3 +64,16 @@ export interface ToastMessage {
   title: string;
   message: string;
 }
+
+export type ClientStatus = 'Live' | 'Mirroring Paused' | 'Disconnected';
+
+export interface ConnectedClient {
+  clientId: string;
+  name: string;
+  browser: string;
+  operatingSystem: string;
+  connectedAt: string;
+  currentPage: ActivePage;
+  status: ClientStatus;
+  isPaused: boolean;
+}

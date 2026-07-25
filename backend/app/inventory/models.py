@@ -10,7 +10,7 @@ class Tower(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    units: Mapped[List["Unit"]] = relationship("Unit", back_populates="tower", cascade="all, delete-orphan", lazy="joined")
+    units: Mapped[List["Unit"]] = relationship("Unit", back_populates="tower", cascade="all, delete-orphan", lazy="selectin")
 
 
 class Unit(Base):

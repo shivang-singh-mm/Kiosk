@@ -3,8 +3,8 @@ from app.websocket.manager import room_manager
 
 
 @sio.event
-async def connect(sid, environ):
-    print(f"Client connected: {sid}")
+async def connect(sid, environ, auth=None):
+    print(f"Client connected: {sid}, auth: {auth}")
 
 
 @sio.event
@@ -15,8 +15,14 @@ async def disconnect(sid):
 
 @sio.event
 async def join_session(sid, data):
-    session_id = data.get("sessionId", "default") if isinstance(data, dict) else str(data)
-    await room_manager.join_client(sid, session_id)
+    if not isinstance(data, dict):
+        data = {"sessionId": str(data)}
+    session_id = data.get("sessionId", "default")
+    client_id = data.get("clientId", sid)
+    browser = data.get("browser", "Browser")
+    os = data.get("operatingSystem", "OS")
+
+    await room_manager.join_client(sid, session_id, client_id, browser, os)
 
 
 @sio.event
@@ -47,3 +53,41 @@ async def sync_video(sid, data):
 @sio.event
 async def sync_booking_modal(sid, data):
     await room_manager.update_and_broadcast(sid, "sync_booking_modal", data)
+
+
+@sio.event
+async def client_list(sid, data=None):
+    session_data = room_manager.client_sessions.get(sid)
+    if session_data:
+        session_id, _ = session_data
+        await room_manager.broadcast_client_list(session_id)
+
+
+@sio.event
+async def client_pause(sid, data):
+    session_data = room_manager.client_sessions.get(sid)
+    if session_data:
+        session_id, _ = session_data
+        client_id = data.get("clientId") if isinstance(data, dict) else str(data)
+        if client_id:
+            await room_manager.pause_client(session_id, client_id)
+
+
+@sio.event
+async def client_resume(sid, data):
+    session_data = room_manager.client_sessions.get(sid)
+    if session_data:
+        session_id, _ = session_data
+        client_id = data.get("clientId") if isinstance(data, dict) else str(data)
+        if client_id:
+            await room_manager.resume_client(session_id, client_id)
+
+
+@sio.event
+async def client_disconnect(sid, data):
+    session_data = room_manager.client_sessions.get(sid)
+    if session_data:
+        session_id, _ = session_data
+        client_id = data.get("clientId") if isinstance(data, dict) else str(data)
+        if client_id:
+            await room_manager.disconnect_client(session_id, client_id)

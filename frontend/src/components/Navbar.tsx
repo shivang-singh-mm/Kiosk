@@ -1,6 +1,6 @@
 import React from 'react';
 import { useKioskStore } from '../store/useKioskStore';
-import { Building2, Image as ImageIcon, Video, QrCode, Users, Copy, Check } from 'lucide-react';
+import { Building2, Image as ImageIcon, Video, QrCode, Users, Copy, Check, Settings2 } from 'lucide-react';
 import { ActivePage } from '../types';
 
 export const Navbar: React.FC = () => {
@@ -10,6 +10,7 @@ export const Navbar: React.FC = () => {
     sessionId,
     connectedClients,
     toggleQRModal,
+    togglePresentationManager,
     addToast
   } = useKioskStore();
 
@@ -84,24 +85,29 @@ export const Navbar: React.FC = () => {
 
           {/* Session Sync Badge & Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <div className="hidden lg:flex items-center space-x-2 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <button
+              onClick={togglePresentationManager}
+              title="Open Presentation Manager"
+              className="flex items-center space-x-2 bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition-all cursor-pointer group"
+            >
               <div className="flex items-center space-x-1.5 text-xs text-slate-300">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="font-semibold text-indigo-400">Room:</span>
-                <span className="font-mono text-slate-200">{sessionId}</span>
+                <span className="font-semibold text-indigo-400 hidden lg:inline">Room:</span>
+                <span className="font-mono text-slate-200 hidden lg:inline">{sessionId}</span>
               </div>
 
-              <div className="h-4 w-px bg-slate-800" />
+              <div className="h-4 w-px bg-slate-800 hidden lg:block" />
 
-              <div className="flex items-center space-x-1 text-xs text-slate-400">
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-semibold text-slate-200">{connectedClients}</span>
-                <span>paired</span>
+              <div className="flex items-center space-x-1.5 text-xs text-slate-300 font-medium">
+                <Users className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-white">{connectedClients}</span>
+                <span className="text-slate-400">clients</span>
+                <Settings2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 transition-colors ml-1" />
               </div>
-            </div>
+            </button>
 
             <button
               onClick={handleCopyLink}

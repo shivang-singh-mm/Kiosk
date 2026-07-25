@@ -1,10 +1,11 @@
 import { create } from 'zustand';
-import { ActivePage, GalleryItem, VideoPlaybackState, ToastMessage } from '../types';
-import { socketService } from '../services/socket';
+import { ActivePage, GalleryItem, VideoPlaybackState, ToastMessage, ConnectedClient } from '../types';
+import { socketService, getPersistentClientId } from '../services/socket';
 
 interface KioskState {
   sessionId: string;
   connectedClients: number;
+  clientsList: ConnectedClient[];
   activePage: ActivePage;
   selectedTowerId: number;
   selectedUnitId: number | null;
@@ -15,6 +16,10 @@ interface KioskState {
   statusFilter: 'ALL' | 'AVAILABLE' | 'BOOKED';
   toasts: ToastMessage[];
   qrModalOpen: boolean;
+  presentationManagerOpen: boolean;
+  isPaused: boolean;
+  isDisconnectedByPresenter: boolean;
+  currentClientId: string;
 
   // Sync actions
   setSessionId: (id: string) => void;
@@ -25,6 +30,12 @@ interface KioskState {
   setVideoPlayback: (playback: VideoPlaybackState | null, syncSocket?: boolean) => void;
   setBookingModalUnitId: (unitId: number | null, syncSocket?: boolean) => void;
   
+  // Presentation actions
+  togglePresentationManager: () => void;
+  pauseClient: (clientId: string) => void;
+  resumeClient: (clientId: string) => void;
+  disconnectClient: (clientId: string) => void;
+
   // Local actions
   setSearchQuery: (query: string) => void;
   setStatusFilter: (filter: 'ALL' | 'AVAILABLE' | 'BOOKED') => void;
@@ -37,6 +48,7 @@ interface KioskState {
 export const useKioskStore = create<KioskState>((set, get) => ({
   sessionId: 'sales-room-101',
   connectedClients: 1,
+  clientsList: [],
   activePage: 'inventory',
   selectedTowerId: 1,
   selectedUnitId: null,
@@ -47,6 +59,10 @@ export const useKioskStore = create<KioskState>((set, get) => ({
   statusFilter: 'ALL',
   toasts: [],
   qrModalOpen: false,
+  presentationManagerOpen: false,
+  isPaused: false,
+  isDisconnectedByPresenter: false,
+  currentClientId: getPersistentClientId(),
 
   setSessionId: (id: string) => set({ sessionId: id }),
 
@@ -92,6 +108,20 @@ export const useKioskStore = create<KioskState>((set, get) => ({
     }
   },
 
+  togglePresentationManager: () => set((state) => ({ presentationManagerOpen: !state.presentationManagerOpen })),
+
+  pauseClient: (clientId: string) => {
+    socketService.emit('client_pause', { clientId });
+  },
+
+  resumeClient: (clientId: string) => {
+    socketService.emit('client_resume', { clientId });
+  },
+
+  disconnectClient: (clientId: string) => {
+    socketService.emit('client_disconnect', { clientId });
+  },
+
   setSearchQuery: (query: string) => set({ searchQuery: query }),
   setStatusFilter: (filter) => set({ statusFilter: filter }),
 
@@ -110,7 +140,8 @@ export const useKioskStore = create<KioskState>((set, get) => ({
   toggleQRModal: () => set((state) => ({ qrModalOpen: !state.qrModalOpen })),
 
   initSocket: (sessionId: string, refreshInventoryCallback: () => void) => {
-    set({ sessionId });
+    const clientId = getPersistentClientId();
+    set({ sessionId, currentClientId: clientId });
     
     socketService.connect(sessionId, (roomState) => {
       if (roomState) {
@@ -165,6 +196,34 @@ export const useKioskStore = create<KioskState>((set, get) => ({
       set({ connectedClients: data.clientsCount || 1 });
     });
 
+    socket.off('client:list_updated');
+    socket.on('client:list_updated', (data: any) => {
+      if (data.clients) {
+        set({
+          clientsList: data.clients,
+          connectedClients: data.clientsCount || data.clients.length,
+        });
+      }
+    });
+
+    socket.off('mirror_status_changed');
+    socket.on('mirror_status_changed', (data: any) => {
+      set({ isPaused: !!data.isPaused });
+      get().addToast({
+        type: data.isPaused ? 'info' : 'success',
+        title: 'Mirroring Status',
+        message: data.isPaused
+          ? 'Presenter has paused mirroring for your screen.'
+          : 'Mirroring resumed by presenter. Synchronizing live state...',
+      });
+    });
+
+    socket.off('client:disconnected_by_presenter');
+    socket.on('client:disconnected_by_presenter', () => {
+      set({ isDisconnectedByPresenter: true });
+      socketService.disconnect();
+    });
+
     socket.off('unit_booked');
     socket.on('unit_booked', (data: any) => {
       set({ bookingModalUnitId: null, selectedUnitId: null });
@@ -180,5 +239,8 @@ export const useKioskStore = create<KioskState>((set, get) => ({
     socket.on('global_inventory_changed', () => {
       refreshInventoryCallback();
     });
+
+    // Request initial client list
+    socket.emit('client_list');
   },
 }));
