@@ -18,7 +18,7 @@ export interface ClientInfo {
   operatingSystem: string;
   connectedAt: string;
   currentPage: string;
-  status: 'Live' | 'Mirroring Paused' | 'Disconnected';
+  status: 'Live' | 'Mirroring Paused';
   paused: boolean;
 }
 
@@ -69,7 +69,7 @@ export class SessionRoomManager {
   public async broadcastClientList(sessionId: string): Promise<void> {
     const io = getIO();
     const clientList = this._getClientListPayload(sessionId);
-    const activeCount = clientList.filter((c) => c.status !== 'Disconnected').length;
+    const activeCount = clientList.length;
 
     const roomState = this.getRoomState(sessionId);
     roomState.clientsCount = activeCount;
@@ -116,7 +116,7 @@ export class SessionRoomManager {
     const currentPage = this.getRoomState(sessionId).activePage || 'inventory';
 
     if (clientsMap.has(resolvedClientId)) {
-      // Refreshed client
+      // Refreshed / reconnected client
       const clientInfo = clientsMap.get(resolvedClientId)!;
       clientInfo.socket_id = sid;
       clientInfo.browser = browser || clientInfo.browser || 'Browser';
@@ -165,8 +165,10 @@ export class SessionRoomManager {
       if (clientsMap && clientsMap.has(clientId)) {
         const cInfo = clientsMap.get(clientId)!;
         if (cInfo.socket_id === sid) {
-          cInfo.status = 'Disconnected';
-          cInfo.socket_id = null;
+          clientsMap.delete(clientId);
+          if (clientsMap.size === 0) {
+            this.sessionClients.delete(sessionId);
+          }
           await this.broadcastClientList(sessionId);
         }
       }
@@ -217,9 +219,7 @@ export class SessionRoomManager {
     if (clientsMap && clientsMap.has(clientId)) {
       const cinfo = clientsMap.get(clientId)!;
       cinfo.paused = true;
-      if (cinfo.status !== 'Disconnected') {
-        cinfo.status = 'Mirroring Paused';
-      }
+      cinfo.status = 'Mirroring Paused';
 
       if (cinfo.socket_id) {
         io.to(cinfo.socket_id).emit('mirror_status_changed', { isPaused: true });
@@ -251,10 +251,13 @@ export class SessionRoomManager {
       const cinfo = clientsMap.get(clientId)!;
       const targetSid = cinfo.socket_id;
 
-      cinfo.status = 'Disconnected';
-      cinfo.socket_id = null;
+      clientsMap.delete(clientId);
+      if (clientsMap.size === 0) {
+        this.sessionClients.delete(sessionId);
+      }
 
       if (targetSid) {
+        this.clientSessions.delete(targetSid);
         const socket = io.sockets.sockets.get(targetSid);
         if (socket) {
           socket.emit('client:disconnected_by_presenter', {

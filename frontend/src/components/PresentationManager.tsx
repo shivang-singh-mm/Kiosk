@@ -31,12 +31,11 @@ export const PresentationManager: React.FC = () => {
 
   const liveCount = clientsList.filter((c) => c.status === 'Live').length;
   const pausedCount = clientsList.filter((c) => c.status === 'Mirroring Paused').length;
-  const disconnectedCount = clientsList.filter((c) => c.status === 'Disconnected').length;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-md transition-all duration-300 animate-in fade-in">
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col">
+      <div className="absolute inset-y-0 right-0 w-full sm:max-w-md flex pl-0 sm:pl-10">
+        <div className="w-full bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col">
           {/* Header */}
           <div className="p-6 border-b border-slate-800 bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900">
             <div className="flex items-center justify-between mb-2">
@@ -59,18 +58,14 @@ export const PresentationManager: React.FC = () => {
             </div>
 
             {/* Quick Status Stats */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800/60 text-center">
+            <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800/60 text-center">
               <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <div className="text-sm font-semibold text-emerald-400">{liveCount}</div>
-                <div className="text-[10px] text-emerald-300/70 uppercase tracking-wider font-medium">Live</div>
+                <div className="text-[10px] text-emerald-300/70 uppercase tracking-wider font-medium">Live Connected</div>
               </div>
               <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                 <div className="text-sm font-semibold text-amber-400">{pausedCount}</div>
-                <div className="text-[10px] text-amber-300/70 uppercase tracking-wider font-medium">Paused</div>
-              </div>
-              <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                <div className="text-sm font-semibold text-rose-400">{disconnectedCount}</div>
-                <div className="text-[10px] text-rose-300/70 uppercase tracking-wider font-medium">Disconnected</div>
+                <div className="text-[10px] text-amber-300/70 uppercase tracking-wider font-medium">Mirroring Paused</div>
               </div>
             </div>
 
@@ -87,13 +82,12 @@ export const PresentationManager: React.FC = () => {
             {clientsList.length === 0 ? (
               <div className="text-center py-12 text-slate-500">
                 <Radio className="w-10 h-10 mx-auto mb-3 opacity-40 animate-pulse text-amber-400" />
-                <p className="text-sm font-medium">No clients detected in this session</p>
+                <p className="text-sm font-medium">No actively connected clients detected</p>
               </div>
             ) : (
               clientsList.map((client) => {
                 const isCurrent = client.clientId === currentClientId;
                 const isClientPaused = client.isPaused || client.status === 'Mirroring Paused';
-                const isDisconnected = client.status === 'Disconnected';
 
                 return (
                   <div
@@ -101,8 +95,6 @@ export const PresentationManager: React.FC = () => {
                     className={`rounded-xl p-4 border transition-all duration-200 ${
                       isCurrent
                         ? 'bg-slate-800/80 border-amber-500/40 ring-1 ring-amber-500/20'
-                        : isDisconnected
-                        ? 'bg-slate-900/40 border-slate-800/60 opacity-60'
                         : 'bg-slate-850/60 border-slate-800 hover:border-slate-700'
                     }`}
                   >
@@ -118,22 +110,15 @@ export const PresentationManager: React.FC = () => {
                       </div>
 
                       {/* Status Badge */}
-                      {client.status === 'Live' && (
+                      {client.status === 'Live' ? (
                         <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                           <span>Live</span>
                         </span>
-                      )}
-                      {client.status === 'Mirroring Paused' && (
+                      ) : (
                         <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/15 text-amber-400 border border-amber-500/30">
                           <PauseCircle className="w-3.5 h-3.5" />
                           <span>Paused</span>
-                        </span>
-                      )}
-                      {client.status === 'Disconnected' && (
-                        <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/15 text-rose-400 border border-rose-500/30">
-                          <UserX className="w-3.5 h-3.5" />
-                          <span>Disconnected</span>
                         </span>
                       )}
                     </div>
@@ -159,36 +144,34 @@ export const PresentationManager: React.FC = () => {
                     </div>
 
                     {/* Action Controls */}
-                    {!isDisconnected && (
-                      <div className="flex items-center space-x-2 pt-1">
-                        {isClientPaused ? (
-                          <button
-                            onClick={() => resumeClient(client.clientId)}
-                            className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors flex items-center justify-center space-x-1.5"
-                          >
-                            <PlayCircle className="w-3.5 h-3.5" />
-                            <span>Resume Mirroring</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => pauseClient(client.clientId)}
-                            className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30 transition-colors flex items-center justify-center space-x-1.5"
-                          >
-                            <PauseCircle className="w-3.5 h-3.5" />
-                            <span>Pause Mirroring</span>
-                          </button>
-                        )}
-
+                    <div className="flex items-center space-x-2 pt-1">
+                      {isClientPaused ? (
                         <button
-                          onClick={() => disconnectClient(client.clientId)}
-                          className="py-1.5 px-3 rounded-lg text-xs font-medium bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/30 transition-colors flex items-center justify-center space-x-1.5"
-                          title="Disconnect Client"
+                          onClick={() => resumeClient(client.clientId)}
+                          className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600/30 transition-colors flex items-center justify-center space-x-1.5"
                         >
-                          <UserX className="w-3.5 h-3.5" />
-                          <span>Disconnect</span>
+                          <PlayCircle className="w-3.5 h-3.5" />
+                          <span>Resume Mirroring</span>
                         </button>
-                      </div>
-                    )}
+                      ) : (
+                        <button
+                          onClick={() => pauseClient(client.clientId)}
+                          className="flex-1 py-1.5 px-3 rounded-lg text-xs font-medium bg-amber-600/20 text-amber-300 border border-amber-500/30 hover:bg-amber-600/30 transition-colors flex items-center justify-center space-x-1.5"
+                        >
+                          <PauseCircle className="w-3.5 h-3.5" />
+                          <span>Pause Mirroring</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => disconnectClient(client.clientId)}
+                        className="py-1.5 px-3 rounded-lg text-xs font-medium bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/30 transition-colors flex items-center justify-center space-x-1.5"
+                        title="Disconnect Client"
+                      >
+                        <UserX className="w-3.5 h-3.5" />
+                        <span>Disconnect</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })
@@ -197,7 +180,7 @@ export const PresentationManager: React.FC = () => {
 
           {/* Footer info */}
           <div className="p-4 border-t border-slate-800 text-center text-xs text-slate-500">
-            Click client controls to pause sync or manage session participation.
+            Active clients auto-synchronize in real time.
           </div>
         </div>
       </div>

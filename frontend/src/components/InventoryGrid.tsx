@@ -34,54 +34,54 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ data }) => {
   const occupancyRate = data.totalUnits > 0 ? Math.round((data.bookedUnits / data.totalUnits) * 100) : 0;
 
   return (
-    <div className="flex-1 space-y-6">
+    <div className="flex-1 w-full space-y-4 sm:space-y-6">
       {/* Top Statistics Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl glass-card flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
-            <Building2 className="w-5 h-5" />
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-slate-900/60 border border-slate-800 p-3 sm:p-4 rounded-2xl glass-card flex items-center space-x-2.5 sm:space-x-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+            <Building2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Total Portfolio</p>
-            <p className="text-xl font-extrabold text-white">{data.totalUnits} Units</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl glass-card flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Available Units</p>
-            <p className="text-xl font-extrabold text-emerald-400">{data.availableUnits}</p>
+          <div className="min-w-0">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Portfolio</p>
+            <p className="text-base sm:text-xl font-extrabold text-white">{data.totalUnits} Units</p>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl glass-card flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
-            <Lock className="w-5 h-5" />
+        <div className="bg-slate-900/60 border border-slate-800 p-3 sm:p-4 rounded-2xl glass-card flex items-center space-x-2.5 sm:space-x-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Reserved Units</p>
-            <p className="text-xl font-extrabold text-rose-400">{data.bookedUnits}</p>
+          <div className="min-w-0">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Available</p>
+            <p className="text-base sm:text-xl font-extrabold text-emerald-400">{data.availableUnits}</p>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl glass-card flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center">
-            <PieChart className="w-5 h-5" />
+        <div className="bg-slate-900/60 border border-slate-800 p-3 sm:p-4 rounded-2xl glass-card flex items-center space-x-2.5 sm:space-x-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center shrink-0">
+            <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <p className="text-xs text-slate-400 font-medium">Occupancy Rate</p>
-            <p className="text-xl font-extrabold text-teal-300">{occupancyRate}%</p>
+          <div className="min-w-0">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Reserved</p>
+            <p className="text-base sm:text-xl font-extrabold text-rose-400">{data.bookedUnits}</p>
+          </div>
+        </div>
+
+        <div className="bg-slate-900/60 border border-slate-800 p-3 sm:p-4 rounded-2xl glass-card flex items-center space-x-2.5 sm:space-x-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center shrink-0">
+            <PieChart className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-medium truncate">Occupancy</p>
+            <p className="text-base sm:text-xl font-extrabold text-teal-300">{occupancyRate}%</p>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900/40 p-3 sm:p-4 rounded-2xl border border-slate-800">
         
-        {/* Search */}
+        {/* Search Input */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
           <input
@@ -89,18 +89,18 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ data }) => {
             placeholder="Search unit by number (e.g. A-101)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
           />
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center space-x-2 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-          <Filter className="w-3.5 h-3.5 text-slate-400 ml-2" />
+        <div className="flex items-center justify-between sm:justify-start space-x-1 sm:space-x-2 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
+          <Filter className="w-3.5 h-3.5 text-slate-400 ml-1.5 hidden sm:block" />
           {(['ALL', 'AVAILABLE', 'BOOKED'] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => setStatusFilter(filter)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 statusFilter === filter
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
@@ -113,9 +113,9 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ data }) => {
       </div>
 
       {/* Header & Units Grid */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
             {currentTower?.name || 'All Units'}
           </h3>
           <span className="text-xs text-slate-400">
@@ -124,13 +124,13 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({ data }) => {
         </div>
 
         {filteredUnits.length === 0 ? (
-          <div className="p-12 text-center bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl">
-            <Building2 className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400 font-medium text-sm">No units found matching criteria</p>
-            <p className="text-slate-500 text-xs mt-1">Try resetting search or filter options</p>
+          <div className="p-8 sm:p-12 text-center bg-slate-900/30 border border-dashed border-slate-800 rounded-2xl">
+            <Building2 className="w-8 h-8 sm:w-10 sm:h-10 text-slate-600 mx-auto mb-2" />
+            <p className="text-slate-400 font-medium text-xs sm:text-sm">No units found matching criteria</p>
+            <p className="text-slate-500 text-[11px] sm:text-xs mt-1">Try resetting search or filter options</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {filteredUnits.map((unit) => (
               <UnitCard
                 key={unit.id}

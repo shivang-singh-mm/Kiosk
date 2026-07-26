@@ -12,14 +12,14 @@ export const TowerSidebar: React.FC<TowerSidebarProps> = ({ towers }) => {
 
   return (
     <aside className="w-full lg:w-72 flex-shrink-0 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 glass-card shadow-xl">
-      <div className="flex items-center space-x-2 mb-4 px-2">
-        <Building className="w-5 h-5 text-indigo-400" />
-        <h2 className="text-sm font-bold tracking-wider text-slate-300 uppercase">
+      <div className="flex items-center space-x-2 mb-3 lg:mb-4 px-1">
+        <Building className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
+        <h2 className="text-xs sm:text-sm font-bold tracking-wider text-slate-300 uppercase">
           Residential Towers
         </h2>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible gap-3 pb-2 lg:pb-0 scrollbar-thin">
         {towers.map((tower) => {
           const isSelected = selectedTowerId === tower.id;
           const totalUnits = tower.units.length;
@@ -31,7 +31,7 @@ export const TowerSidebar: React.FC<TowerSidebarProps> = ({ towers }) => {
             <button
               key={tower.id}
               onClick={() => setSelectedTowerId(tower.id)}
-              className={`w-full text-left p-4 rounded-xl transition-all duration-200 border relative overflow-hidden ${
+              className={`min-w-[240px] sm:min-w-[260px] lg:min-w-0 w-full text-left p-3 sm:p-4 rounded-xl transition-all duration-200 border relative overflow-hidden shrink-0 ${
                 isSelected
                   ? 'bg-gradient-to-r from-indigo-900/50 via-slate-900 to-slate-900 border-indigo-500/60 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/40'
                   : 'bg-slate-950/40 border-slate-800/80 hover:bg-slate-800/40 text-slate-400 hover:border-slate-700'
@@ -43,10 +43,10 @@ export const TowerSidebar: React.FC<TowerSidebarProps> = ({ towers }) => {
               )}
 
               <div className="flex items-center justify-between mb-2">
-                <span className={`font-semibold text-sm ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                <span className={`font-semibold text-xs sm:text-sm ${isSelected ? 'text-white' : 'text-slate-200'}`}>
                   {tower.name}
                 </span>
-                <span className={`text-xs px-2 py-0.5 rounded-md font-mono ${
+                <span className={`text-[10px] sm:text-xs px-2 py-0.5 rounded-md font-mono ${
                   isSelected ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-slate-800 text-slate-400'
                 }`}>
                   {totalUnits} Units
@@ -54,14 +54,14 @@ export const TowerSidebar: React.FC<TowerSidebarProps> = ({ towers }) => {
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-3">
+              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-2.5">
                 <div
                   className="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500"
                   style={{ width: `${occupancyPercent}%` }}
                 />
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400">
                 <div className="flex items-center space-x-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   <span>{availableUnits} Free</span>

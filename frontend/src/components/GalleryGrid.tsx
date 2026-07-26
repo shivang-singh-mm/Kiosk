@@ -64,19 +64,19 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items }) => {
   }, [items, isOnline]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
             Architectural Photo Showcase
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-0.5">
             High-resolution interior & exterior residence views (IndexedDB Offline Cached)
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {items.map((item) => {
           const cacheInfo = cachedMap[item.id];
           const isCached = cacheInfo?.isCached || false;
@@ -91,7 +91,7 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items }) => {
                   setGalleryPreview({ ...item, imageUrl: displayUrl });
                 }
               }}
-              className={`group relative h-64 rounded-2xl overflow-hidden border transition-all ${
+              className={`group relative h-52 sm:h-64 rounded-2xl overflow-hidden border transition-all ${
                 isNotAvailableOffline
                   ? 'bg-slate-950 border-slate-800/60 cursor-not-allowed opacity-75'
                   : 'cursor-pointer border-slate-800 bg-slate-900 shadow-xl hover:border-slate-700'
@@ -99,7 +99,7 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items }) => {
             >
               {isNotAvailableOffline ? (
                 <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-slate-950/90 text-slate-500">
-                  <ImageOff className="w-10 h-10 mb-2 opacity-40 text-rose-400" />
+                  <ImageOff className="w-8 h-8 sm:w-10 sm:h-10 mb-2 opacity-40 text-rose-400" />
                   <span className="text-xs font-semibold text-rose-300">This media is not available offline.</span>
                 </div>
               ) : (
@@ -116,7 +116,7 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items }) => {
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
               )}
 
-              <div className="absolute inset-0 p-4 flex flex-col justify-between">
+              <div className="absolute inset-0 p-3 sm:p-4 flex flex-col justify-between">
                 <div className="flex justify-between items-start">
                   {/* Cached Badge */}
                   {isCached ? (
@@ -128,14 +128,14 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items }) => {
                   )}
 
                   {!isNotAvailableOffline && (
-                    <span className="w-8 h-8 rounded-full bg-slate-950/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-100 scale-75">
-                      <Maximize2 className="w-4 h-4" />
+                    <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-950/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-100 scale-75">
+                      <Maximize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
+                  <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-indigo-300 transition-colors line-clamp-1">
                     {item.title}
                   </h3>
                 </div>
