@@ -1,6 +1,9 @@
 import { create } from 'zustand';
-import { ActivePage, GalleryItem, VideoPlaybackState, ToastMessage, ConnectedClient } from '../types';
+import { ActivePage, GalleryItem, VideoPlaybackState, ToastMessage, ConnectedClient, PendingBookingRecord } from '../types';
 import { socketService, getPersistentClientId } from '../services/socket';
+import { bookingQueueService } from '../services/indexeddb/bookingQueue.service';
+import { bookUnit } from '../services/api';
+import Axios from 'axios';
 
 interface KioskState {
   sessionId: string;
@@ -21,6 +24,11 @@ interface KioskState {
   isDisconnectedByPresenter: boolean;
   currentClientId: string;
 
+  // Offline & IndexedDB state
+  isOnline: boolean;
+  pendingBookings: PendingBookingRecord[];
+  pendingSyncModalOpen: boolean;
+
   // Sync actions
   setSessionId: (id: string) => void;
   setActivePage: (page: ActivePage, syncSocket?: boolean) => void;
@@ -35,6 +43,14 @@ interface KioskState {
   pauseClient: (clientId: string) => void;
   resumeClient: (clientId: string) => void;
   disconnectClient: (clientId: string) => void;
+
+  // Offline actions
+  setIsOnline: (online: boolean) => void;
+  togglePendingSyncModal: () => void;
+  fetchPendingBookings: () => Promise<void>;
+  addPendingBooking: (data: Omit<PendingBookingRecord, 'id' | 'createdAt' | 'status'>) => Promise<void>;
+  removePendingBooking: (id: number) => Promise<void>;
+  syncPendingBookings: (refreshInventoryCallback?: () => void) => Promise<void>;
 
   // Local actions
   setSearchQuery: (query: string) => void;
@@ -63,6 +79,10 @@ export const useKioskStore = create<KioskState>((set, get) => ({
   isPaused: false,
   isDisconnectedByPresenter: false,
   currentClientId: getPersistentClientId(),
+
+  isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+  pendingBookings: [],
+  pendingSyncModalOpen: false,
 
   setSessionId: (id: string) => set({ sessionId: id }),
 
@@ -122,6 +142,103 @@ export const useKioskStore = create<KioskState>((set, get) => ({
     socketService.emit('client_disconnect', { clientId });
   },
 
+  setIsOnline: (online: boolean) => set({ isOnline: online }),
+
+  togglePendingSyncModal: () => set((state) => ({ pendingSyncModalOpen: !state.pendingSyncModalOpen })),
+
+  fetchPendingBookings: async () => {
+    try {
+      const queue = await bookingQueueService.getPendingBookings();
+      set({ pendingBookings: queue });
+    } catch (err) {
+      console.error('Failed to fetch pending bookings from IndexedDB:', err);
+    }
+  },
+
+  addPendingBooking: async (data) => {
+    try {
+      await bookingQueueService.addPendingBooking(data);
+      await get().fetchPendingBookings();
+      get().addToast({
+        type: 'info',
+        title: 'Saved Locally',
+        message: "Booking saved locally and will sync automatically when you're back online.",
+      });
+    } catch (err) {
+      console.error('Failed to add pending booking:', err);
+    }
+  },
+
+  removePendingBooking: async (id: number) => {
+    try {
+      await bookingQueueService.removePendingBooking(id);
+      await get().fetchPendingBookings();
+    } catch (err) {
+      console.error('Failed to remove pending booking:', err);
+    }
+  },
+
+  syncPendingBookings: async (refreshInventoryCallback?: () => void) => {
+    const queue = await bookingQueueService.getPendingBookings();
+    if (queue.length === 0) return;
+
+    get().addToast({
+      type: 'info',
+      title: 'Syncing Bookings',
+      message: 'Syncing bookings...',
+    });
+
+    let hasSuccess = false;
+
+    for (const item of queue) {
+      if (item.id === undefined) continue;
+
+      try {
+        await bookingQueueService.updateBookingStatus(item.id, 'SYNCING');
+        await get().fetchPendingBookings();
+
+        await bookUnit({
+          unitId: item.unitId,
+          customerName: item.customerName,
+          phone: item.phone,
+          sessionId: get().sessionId,
+        });
+
+        await bookingQueueService.removePendingBooking(item.id);
+        hasSuccess = true;
+      } catch (err: any) {
+        if (Axios.isAxiosError(err) && err.response && err.response.status === 409) {
+          // Unit already booked by another user while offline
+          await bookingQueueService.removePendingBooking(item.id);
+          get().addToast({
+            type: 'error',
+            title: 'Booking Conflict',
+            message: `Unit ${item.unitNumber} was booked by another user while you were offline.`,
+          });
+        } else {
+          // General network failure - revert status to PENDING and break to try again later
+          await bookingQueueService.updateBookingStatus(item.id, 'PENDING');
+          break;
+        }
+      } finally {
+        await get().fetchPendingBookings();
+      }
+    }
+
+    if (refreshInventoryCallback) {
+      refreshInventoryCallback();
+    }
+
+    const remaining = await bookingQueueService.getPendingBookings();
+    if (remaining.length === 0 && hasSuccess) {
+      get().addToast({
+        type: 'success',
+        title: 'Sync Completed',
+        message: 'All pending bookings synchronized successfully.',
+      });
+    }
+  },
+
   setSearchQuery: (query: string) => set({ searchQuery: query }),
   setStatusFilter: (filter) => set({ statusFilter: filter }),
 
@@ -142,7 +259,40 @@ export const useKioskStore = create<KioskState>((set, get) => ({
   initSocket: (sessionId: string, refreshInventoryCallback: () => void) => {
     const clientId = getPersistentClientId();
     set({ sessionId, currentClientId: clientId });
-    
+
+    // Initial fetch of pending bookings from IndexedDB
+    get().fetchPendingBookings();
+
+    // Listen to network status changes
+    const handleOnline = () => {
+      set({ isOnline: true });
+      get().addToast({
+        type: 'success',
+        title: 'Connection Restored',
+        message: 'Network connection restored. Syncing offline changes...',
+      });
+      get().syncPendingBookings(refreshInventoryCallback);
+    };
+
+    const handleOffline = () => {
+      set({ isOnline: false });
+      get().addToast({
+        type: 'error',
+        title: 'Offline Mode',
+        message: 'Internet connection lost. Working in offline mode.',
+      });
+    };
+
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // If currently online, trigger sync for any existing queued items from previous session
+    if (navigator.onLine) {
+      get().syncPendingBookings(refreshInventoryCallback);
+    }
+
     socketService.connect(sessionId, (roomState) => {
       if (roomState) {
         set({

@@ -8,6 +8,7 @@ import { VideosPage } from './pages/VideosPage';
 import { ToastContainer } from './components/Toast';
 import { QRModal } from './components/QRModal';
 import { PresentationManager } from './components/PresentationManager';
+import { PendingSyncModal } from './components/PendingSyncModal';
 import { UserX, RefreshCw } from 'lucide-react';
 
 export const App: React.FC = () => {
@@ -73,6 +74,7 @@ export const App: React.FC = () => {
       <ToastContainer />
       <QRModal />
       <PresentationManager />
+      <PendingSyncModal />
     </div>
   );
 };

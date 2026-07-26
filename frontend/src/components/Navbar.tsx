@@ -1,6 +1,6 @@
 import React from 'react';
 import { useKioskStore } from '../store/useKioskStore';
-import { Building2, Image as ImageIcon, Video, QrCode, Users, Copy, Check, Settings2 } from 'lucide-react';
+import { Building2, Image as ImageIcon, Video, QrCode, Users, Copy, Check, Settings2, WifiOff } from 'lucide-react';
 import { ActivePage } from '../types';
 
 export const Navbar: React.FC = () => {
@@ -11,6 +11,9 @@ export const Navbar: React.FC = () => {
     connectedClients,
     toggleQRModal,
     togglePresentationManager,
+    isOnline,
+    pendingBookings,
+    togglePendingSyncModal,
     addToast
   } = useKioskStore();
 
@@ -83,8 +86,40 @@ export const Navbar: React.FC = () => {
             })}
           </nav>
 
-          {/* Session Sync Badge & Controls */}
+          {/* Session Sync Badge, Network Status & Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Online / Offline Status Badge */}
+            <div
+              className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-xl border text-xs font-semibold ${
+                isOnline
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              }`}
+            >
+              {isOnline ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="hidden sm:inline">Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3.5 h-3.5 text-rose-400" />
+                  <span className="hidden sm:inline">Offline</span>
+                </>
+              )}
+            </div>
+
+            {/* Pending Sync Badge (If Offline & Pending Bookings Exist) */}
+            {pendingBookings.length > 0 && (
+              <button
+                onClick={togglePendingSyncModal}
+                className="flex items-center space-x-1.5 px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all shadow-md shadow-amber-900/30 animate-pulse"
+                title="View pending offline bookings"
+              >
+                <span>Pending Sync ({pendingBookings.length})</span>
+              </button>
+            )}
+
             <button
               onClick={togglePresentationManager}
               title="Open Presentation Manager"

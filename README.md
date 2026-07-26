@@ -217,6 +217,25 @@ To verify multi-screen synchronization & Presentation Manager controls locally:
 
 ---
 
+## 🐳 Docker Deployment
+
+To launch the full containerized production stack (PostgreSQL, Node.js Backend, and React Frontend) with Docker Compose:
+
+```bash
+docker-compose up --build -d
+```
+
+- **Frontend Application**: `http://localhost:5173`
+- **Backend API Server**: `http://localhost:8000`
+- **PostgreSQL Database**: `localhost:5432`
+
+To tear down services:
+```bash
+docker-compose down -v
+```
+
+---
+
 ## ☁️ Cloud Deployment & Keep-Alive Ping
 
 When deploying `kiosk-backend` to free or starter web hosting platforms like **Render**:

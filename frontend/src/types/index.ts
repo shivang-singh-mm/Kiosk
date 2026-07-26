@@ -77,3 +77,15 @@ export interface ConnectedClient {
   status: ClientStatus;
   isPaused: boolean;
 }
+
+export interface PendingBookingRecord {
+  id?: number;
+  unitId: number;
+  unitNumber: string;
+  towerName?: string;
+  customerName: string;
+  phone: string;
+  createdAt: string;
+  status: 'PENDING' | 'SYNCING';
+}
+

@@ -15,7 +15,9 @@ export const BookingModal: React.FC<BookingModalProps> = ({ unit, towerName, onS
   const {
     sessionId,
     setBookingModalUnitId,
-    addToast
+    addToast,
+    isOnline,
+    addPendingBooking,
   } = useKioskStore();
 
   const [customerName, setCustomerName] = useState('');
@@ -52,12 +54,27 @@ export const BookingModal: React.FC<BookingModalProps> = ({ unit, towerName, onS
 
     setLoading(true);
 
+    // If offline: save to pending bookings queue in IndexedDB
+    if (!isOnline) {
+      await addPendingBooking({
+        unitId: unit.id,
+        unitNumber: unit.number,
+        towerName: towerName,
+        customerName: customerName.trim(),
+        phone: phone.trim(),
+      });
+      setBookingModalUnitId(null);
+      onSuccess();
+      setLoading(false);
+      return;
+    }
+
     try {
       await bookUnit({
         unitId: unit.id,
         customerName: customerName.trim(),
         phone: phone.trim(),
-        sessionId: sessionId
+        sessionId: sessionId,
       });
 
       addToast({
@@ -74,12 +91,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({ unit, towerName, onS
         if (typeof detail === 'string') {
           setErrorMessage(detail);
         } else if (Array.isArray(detail)) {
-          setErrorMessage(detail.map(d => d.msg).join(', '));
+          setErrorMessage(detail.map((d) => d.msg).join(', '));
         } else {
           setErrorMessage('This unit has already been booked.');
         }
       } else {
-        setErrorMessage('Failed to connect to booking server. Please try again.');
+        // If connection fails during online request, offer to queue offline
+        setErrorMessage('Failed to connect to server. Your booking will be saved locally when offline.');
       }
     } finally {
       setLoading(false);
@@ -89,7 +107,6 @@ export const BookingModal: React.FC<BookingModalProps> = ({ unit, towerName, onS
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
       <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/50 glass-panel">
-        
         {/* Close Button */}
         <button
           onClick={() => setBookingModalUnitId(null)}
@@ -108,7 +125,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ unit, towerName, onS
               Reserve Unit #{unit.number}
             </h2>
             <p className="text-xs text-slate-400">
-              {towerName} • Atomic Lock Protected
+              {towerName} • {!isOnline ? 'Offline Local Queue' : 'Atomic Lock Protected'}
             </p>
           </div>
         </div>
@@ -186,7 +203,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({ unit, towerName, onS
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  <span>Confirm Reservation</span>
+                  <span>{isOnline ? 'Confirm Reservation' : 'Queue Offline Booking'}</span>
                 </>
               )}
             </button>
