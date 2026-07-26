@@ -1,8 +1,8 @@
 # Sales Kiosk Application
 
-Production-ready, feature-modular **Real-Time Sales Kiosk Application** designed for high-end real estate sales galleries. Built with **FastAPI**, **SQLAlchemy 2.0 (Async)**, **Socket.IO**, **React**, **Vite**, **TypeScript**, **Zustand**, and **TailwindCSS**.
+Production-ready, feature-modular **Real-Time Sales Kiosk Application** designed for high-end real estate sales galleries. Built with **Node.js**, **Express**, **TypeScript**, **PostgreSQL**, **Socket.IO**, **React**, **Vite**, **Zustand**, and **TailwindCSS**.
 
-Designed for sales executives and client presentation suites to mirror screens live across devices (tablets, kiosks, desktop browsers) with real-time state sync and **race-condition safe atomic unit reservations**.
+Designed for sales executives and client presentation suites to mirror screens live across devices (tablets, kiosks, desktop browsers) with real-time state sync, **Presentation Manager controls**, **persistent tab identity**, and **race-condition safe atomic unit reservations**.
 
 ---
 
@@ -12,15 +12,14 @@ Designed for sales executives and client presentation suites to mirror screens l
 - [🏗️ System Architecture](#️-system-architecture)
 - [🚀 Local Environment Setup](#-local-environment-setup)
   - [Prerequisites](#prerequisites)
-  - [Backend Setup (Windows & macOS)](#1-backend-setup)
-  - [Frontend Setup](#2-frontend-setup)
+  - [Backend Setup (Node.js + TypeScript + PostgreSQL)](#1-backend-setup-nodejs--typescript--postgresql)
+  - [Frontend Setup (React + Vite)](#2-frontend-setup-react--vite)
 - [📡 API Endpoints Reference](#-api-endpoints-reference)
-- [💻 Frontend Pages Reference](#-frontend-pages-reference)
+- [💻 Frontend Pages & Presentation Manager Reference](#-frontend-pages--presentation-manager-reference)
 - [⚡ WebSocket Events Contract](#-websocket-events-contract)
-- [📄 OpenAPI / Swagger 3.0 Specification](#-openapi--swagger-30-specification)
 - [🔒 Atomic Reservation & Concurrency Handling](#-atomic-reservation--concurrency-handling)
-- [🧪 Real-Time Device Pairing Test Guide](#-real-time-device-pairing-test-guide)
-- [🐳 Docker Deployment](#-docker-deployment)
+- [🧪 Real-Time Device Pairing & Presentation Manager Test Guide](#-real-time-device-pairing--presentation-manager-test-guide)
+- [☁️ Cloud Deployment & Keep-Alive Ping](#️-cloud-deployment--keep-alive-ping)
 - [🔧 Troubleshooting & FAQ](#-troubleshooting--faq)
 
 ---
@@ -28,16 +27,21 @@ Designed for sales executives and client presentation suites to mirror screens l
 ## 🌟 Key Features
 
 1. **Feature-Based Modular Architecture**:
-   - Clean domain separation (`app/gallery`, `app/video`, `app/inventory`, `app/booking`, `app/websocket`).
-   - Enterprise pattern separation (`router.py`, `service.py`, `repository.py`, `models.py`, `schemas.py`).
-2. **Atomic Race-Condition Safe Unit Booking**:
-   - Database-level transaction safety via conditional SQL updates: `UPDATE unit SET status='BOOKED' WHERE id=:id AND status='AVAILABLE'`.
+   - Clean domain separation (`src/modules/gallery`, `src/modules/video`, `src/modules/inventory`, `src/modules/booking`, `src/modules/websocket`).
+   - Layered enterprise pattern (`router.ts`, `service.ts`, `repository.ts`).
+2. **Persistent Client Identity**:
+   - Tab-persistent UUID stored in `sessionStorage`. Survives page reloads without creating duplicate client entries or inflating client counts.
+3. **Executive Presentation Manager**:
+   - Live client list drawer showing connected clients, browser, OS, connected time, current page, and live status badges (`Live`, `Mirroring Paused`, `Disconnected`).
+   - Per-client presenter controls: **Pause Mirroring**, **Resume Mirroring** (instant state resync), and **Disconnect Client**.
+4. **Atomic Race-Condition Safe Unit Booking**:
+   - Database-level transaction safety via PostgreSQL conditional SQL updates: `UPDATE unit SET status='BOOKED' WHERE id=$1 AND status='AVAILABLE'`.
    - Prevents double-booking across simultaneous sales executive requests (returns `409 Conflict`).
-3. **Real-Time Multi-Device Room Synchronization**:
+5. **Real-Time Multi-Device Room Synchronization**:
    - Bi-directional Socket.IO room sync (`sales-room-101`).
-   - Synchronizes page navigation, tower selection, unit highlights, photo gallery lightbox state, video playback timestamps, and booking modals across all paired executive and customer tablets.
-4. **Modern Dark Glassmorphism UI**:
-   - Modern TailwindCSS styling with responsive design, Lucide icons, live search filters, stats widgets, and keyboard shortcuts (`Esc` key listeners).
+   - Selective broadcasting ensures paused screens bypass live state updates until resumed.
+6. **Render Deployment Keep-Alive**:
+   - Keep-alive ping endpoint (`/ping` & `/api/ping`) returning `{ status: 'healthy', message: 'pong' }` for UptimeRobot / cron pings on Render.
 
 ---
 
@@ -45,17 +49,17 @@ Designed for sales executives and client presentation suites to mirror screens l
 
 ```mermaid
 graph TD
-    Client1[Kiosk Executive Screen] <-->|Socket.IO Events| SIO[FastAPI + Socket.IO Server]
+    Client1[Kiosk Executive Screen] <-->|Socket.IO Events| SIO[Node.js + Socket.IO Server]
     Client2[Customer Tablet Screen] <-->|Socket.IO Events| SIO
     
-    Client1 -->|REST API Requests| API[FastAPI V1 REST Endpoints]
+    Client1 -->|REST API Requests| API[Express V1 REST Endpoints]
     Client2 -->|REST API Requests| API
     
     API --> Service[Domain Services]
-    Service --> Repo[Async SQLAlchemy Repositories]
-    Repo --> DB[(SQLite / PostgreSQL Database)]
+    Service --> Repo[PostgreSQL Repositories]
+    Repo --> DB[(PostgreSQL Database)]
 
-    SIO --> RoomMgr[In-Memory Room State Manager]
+    SIO --> RoomMgr[In-Memory Session Room Manager]
 ```
 
 ---
@@ -63,64 +67,37 @@ graph TD
 ## 🚀 Local Environment Setup
 
 ### Prerequisites
-- **Python**: `3.12+`
 - **Node.js**: `18.0+` (with `npm`)
+- **PostgreSQL**: `14+` (or PostgreSQL connection URI)
 - **Git**
 
 ---
 
-### 1. Backend Setup
-
-#### 🪟 Windows (PowerShell / Command Prompt)
-
-```powershell
-# 1. Navigate to backend directory
-cd backend
-
-# 2. Create virtual environment
-python -m venv venv
-
-# 3. Activate virtual environment
-# PowerShell:
-.\venv\Scripts\Activate.ps1
-# OR Command Prompt (cmd):
-# .\venv\Scripts\activate.bat
-
-# 4. Upgrade pip & install dependencies
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-
-# 5. Run Uvicorn development server
-uvicorn app.main:combined_app --reload --port 8000
-```
-
-#### 🍎 macOS & 🐧 Linux (Terminal)
+### 1. Backend Setup (Node.js + TypeScript + PostgreSQL)
 
 ```bash
-# 1. Navigate to backend directory
-cd backend
+# 1. Navigate to kiosk-backend directory
+cd kiosk-backend
 
-# 2. Create virtual environment
-python3 -m venv venv
+# 2. Install NPM dependencies
+npm install
 
-# 3. Activate virtual environment
-source venv/bin/activate
+# 3. Create or configure .env file
+# Example .env:
+# PORT=8000
+# DATABASE_URL=postgres://postgres:postgres@localhost:5432/kiosk_db
 
-# 4. Upgrade pip & install dependencies
-pip install --upgrade pip
-pip install -r requirements.txt
-
-# 5. Run Uvicorn development server
-uvicorn app.main:combined_app --reload --port 8000
+# 4. Start TypeScript development server
+npm run dev
 ```
 
-> 💡 **Note**: Database tables and seed data (3 Towers, 12 Units, 8 Gallery Images, 4 Videos) are automatically generated on server startup via lifespan triggers.
+> 💡 **Note**: Database schema tables (`tower`, `unit`, `gallery`, `video`, `booking`) and seed data (3 Towers, 12 Units, 8 Gallery Images, 4 Videos) are automatically generated on server startup.
 
 ---
 
-### 2. Frontend Setup
+### 2. Frontend Setup (React + Vite)
 
-Open a **new terminal window/tab**:
+Open a **new terminal window**:
 
 ```bash
 # 1. Navigate to frontend directory
@@ -129,39 +106,44 @@ cd frontend
 # 2. Install NPM dependencies
 npm install
 
-# 3. Start Vite local development server
+# 3. Create or configure .env file
+# Example .env:
+# VITE_API_URL=http://localhost:8000/api
+# VITE_SOCKET_URL=http://localhost:8000
+
+# 4. Start Vite local development server
 npm run dev
 ```
 
-- **Frontend URL**: `http://localhost:5173`
-- **Backend Base API**: `http://localhost:8000/api/v1`
-- **Interactive Swagger Docs**: `http://localhost:8000/docs`
-- **ReDoc UI**: `http://localhost:8000/redoc`
+- **Frontend Application**: `http://localhost:5173`
+- **Backend API Base**: `http://localhost:8000/api`
+- **Keep-Alive Ping Endpoint**: `http://localhost:8000/ping`
 
 ---
 
 ## 📡 API Endpoints Reference
 
-All REST API endpoints are prefixed with `/api/v1`.
+All REST API endpoints are served under `/api` (or root health routes):
 
-| HTTP Method | Endpoint | Description | Request Payload / Params | Response Code | Tag |
+| HTTP Method | Endpoint | Description | Request Body / Query | Response Code | Tag |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **GET** | `/` | Root API health status & version metadata | None | `200 OK` | Health |
-| **GET** | `/api/v1/inventory` | Fetches all towers with nested apartment units | None | `200 OK` | Inventory |
-| **GET** | `/api/v1/gallery` | Fetches high-res property gallery photo list | None | `200 OK` | Gallery |
-| **GET** | `/api/v1/videos` | Fetches promotional property video catalog | None | `200 OK` | Videos |
-| **POST** | `/api/v1/book` | Atomically reserves an available unit | `{ unit_id, customer_name, customer_email, customer_phone }` | `201 Created` / `409 Conflict` / `404 Not Found` | Booking |
+| **GET** | `/` or `/ping` or `/api/ping` | Keep-alive health check & server status | None | `200 OK` | Health |
+| **GET** | `/api/inventory` | Fetches all towers with nested units & availability stats | None | `200 OK` | Inventory |
+| **GET** | `/api/gallery` | Fetches property gallery photo list | None | `200 OK` | Gallery |
+| **GET** | `/api/videos` | Fetches promotional property video catalog | None | `200 OK` | Videos |
+| **POST** | `/api/book` | Atomically reserves an available unit | `{ unitId, customerName, phone, sessionId }` | `201 Created` / `409 Conflict` / `404 Not Found` | Booking |
 
 ---
 
-## 💻 Frontend Pages Reference
+## 💻 Frontend Pages & Presentation Manager Reference
 
-| Page / Component | View Identifier | Key Components & Features | Description |
+| View / Component | View Identifier | Key Components & Features | Description |
 | :--- | :--- | :--- | :--- |
-| **Inventory Showcase** | `inventory` | `TowerSelector`, `UnitGrid`, `UnitCard`, `BookingModal`, `StatsWidget` | Interactive inventory page displaying residential towers, unit floor plans, price filters, real-time availability tags, search, and direct unit booking modal. |
-| **Media Gallery** | `gallery` | `CategoryFilter`, `ImageGrid`, `LightboxModal` | High-definition image showcase featuring category tab filters (Exterior, Interior, Amenities) and full-screen image lightbox sync. |
-| **Video Theater** | `videos` | `VideoCard`, `CustomVideoPlayer` | Video showcase streaming HD project walkthroughs with synchronized play/pause/seek controls for multi-screen sync. |
-| **Device Pairing Header** | Navbar (Global) | `QRModal`, `SessionLinkBanner` | Displays pairing status, quick session room ID trigger, live Socket.IO connection pulse indicator, and QR code modal for mobile/tablet pairing. |
+| **Inventory Grid** | `inventory` | `TowerSelector`, `UnitGrid`, `UnitCard`, `BookingModal` | Interactive inventory page displaying residential towers, unit floor plans, real-time availability tags, search, and direct unit booking modal. |
+| **Media Gallery** | `gallery` | `ImageGrid`, `ImageModal` | High-definition image showcase featuring full-screen image lightbox sync. |
+| **Video Theater** | `videos` | `VideoCard`, `CustomVideoPlayer` | Video showcase streaming HD project walkthroughs with synchronized play/pause/seek controls. |
+| **Presentation Manager** | Side Drawer (Global) | `PresentationManager` | Clickable client badge opens live drawer listing connected clients, browser, OS, connected time, page, and controls (**Pause**, **Resume**, **Disconnect**). |
+| **Device Pairing Header** | Navbar (Global) | `QRModal`, `SessionLinkBanner` | Displays pairing status, session room ID trigger, client count badge, and QR code modal for mobile/tablet pairing. |
 
 ---
 
@@ -171,263 +153,17 @@ WebSocket connection endpoint: `http://localhost:8000/socket.io`
 
 | Event Name | Direction | Payload Example | Purpose |
 | :--- | :--- | :--- | :--- |
-| `join_session` | Client ➔ Server | `{ "sessionId": "sales-room-101" }` | Joins a synchronized presentation room. |
-| `sync_navigation` | Bi-directional | `{ "page": "gallery" }` | Syncs active tab across all paired devices. |
-| `sync_tower` | Bi-directional | `{ "towerId": 2 }` | Syncs active tower selection. |
-| `sync_unit` | Bi-directional | `{ "unitId": 5 }` | Syncs highlighted/selected property unit. |
-| `sync_gallery` | Bi-directional | `{ "index": 3 }` | Syncs full-screen photo lightbox index. |
-| `sync_video` | Bi-directional | `{ "isPlaying": true, "currentTime": 12.5 }` | Syncs video play state and timestamp. |
-| `sync_booking_modal` | Bi-directional | `{ "isOpen": true, "unitId": 5 }` | Opens/closes booking dialog across screens. |
-
----
-
-## 📄 OpenAPI / Swagger 3.0 Specification
-
-FastAPI automatically serves interactive Swagger UI at **`http://localhost:8000/docs`**.
-
-Below is the complete OpenAPI 3.0.3 YAML schema definition for integration with Postman, Swagger UI, or API gateways:
-
-```yaml
-openapi: 3.0.3
-info:
-  title: Sales Kiosk API
-  description: Real-time Sales Kiosk backend API supporting real estate presentation and atomic unit booking.
-  version: 1.0.0
-paths:
-  /:
-    get:
-      summary: Root Health Check
-      operationId: root_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: healthy
-                  app:
-                    type: string
-                    example: Sales Kiosk API
-                  version:
-                    type: string
-                    example: 1.0.0
-  /api/v1/inventory:
-    get:
-      tags:
-        - Inventory
-      summary: Get Full Inventory
-      description: Returns list of all towers along with their nested units.
-      operationId: get_inventory_api_v1_inventory_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InventoryRead'
-  /api/v1/gallery:
-    get:
-      tags:
-        - Gallery
-      summary: Get Gallery Images
-      description: Returns list of high-definition photo assets.
-      operationId: get_gallery_api_v1_gallery_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/GalleryRead'
-  /api/v1/videos:
-    get:
-      tags:
-        - Videos
-      summary: Get Video Catalog
-      description: Returns list of promotional property showcase videos.
-      operationId: get_videos_api_v1_videos_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/VideoRead'
-  /api/v1/book:
-    post:
-      tags:
-        - Booking
-      summary: Book Unit
-      description: Atomically reserves an available apartment unit. Prevents double-booking via atomic SQL updates.
-      operationId: book_unit_api_v1_book_post
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BookingCreate'
-      responses:
-        '201':
-          description: Unit successfully reserved.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BookingRead'
-        '404':
-          description: Specified unit ID was not found.
-        '409':
-          description: Conflict — Unit has already been booked by another customer.
-
-components:
-  schemas:
-    UnitRead:
-      type: object
-      required:
-        - id
-        - tower_id
-        - unit_number
-        - floor
-        - bedrooms
-        - bathrooms
-        - area_sqft
-        - price
-        - status
-      properties:
-        id:
-          type: integer
-        tower_id:
-          type: integer
-        unit_number:
-          type: string
-        floor:
-          type: integer
-        bedrooms:
-          type: integer
-        bathrooms:
-          type: integer
-        area_sqft:
-          type: number
-        price:
-          type: number
-        status:
-          type: string
-          enum: [AVAILABLE, RESERVED, BOOKED]
-
-    TowerRead:
-      type: object
-      required:
-        - id
-        - name
-        - total_floors
-        - units
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        total_floors:
-          type: integer
-        units:
-          type: array
-          items:
-            $ref: '#/components/schemas/UnitRead'
-
-    InventoryRead:
-      type: object
-      required:
-        - towers
-      properties:
-        towers:
-          type: array
-          items:
-            $ref: '#/components/schemas/TowerRead'
-
-    GalleryRead:
-      type: object
-      required:
-        - id
-        - title
-        - category
-        - image_url
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        category:
-          type: string
-        image_url:
-          type: string
-
-    VideoRead:
-      type: object
-      required:
-        - id
-        - title
-        - duration
-        - video_url
-        - thumbnail_url
-      properties:
-        id:
-          type: integer
-        title:
-          type: string
-        duration:
-          type: string
-        video_url:
-          type: string
-        thumbnail_url:
-          type: string
-
-    BookingCreate:
-      type: object
-      required:
-        - unit_id
-        - customer_name
-        - customer_email
-        - customer_phone
-      properties:
-        unit_id:
-          type: integer
-        customer_name:
-          type: string
-        customer_email:
-          type: string
-        customer_phone:
-          type: string
-
-    BookingRead:
-      type: object
-      required:
-        - id
-        - unit_id
-        - customer_name
-        - customer_email
-        - customer_phone
-        - created_at
-      properties:
-        id:
-          type: integer
-        unit_id:
-          type: integer
-        customer_name:
-          type: string
-        customer_email:
-          type: string
-        customer_phone:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-```
+| `join_session` | Client ➔ Server | `{ "sessionId": "sales-room-101", "clientId": "uuid", "browser": "Chrome", "operatingSystem": "Windows" }` | Joins a synchronized presentation room with persistent client identity. |
+| `sync_navigation` | Bi-directional | `{ "activePage": "gallery" }` | Syncs active tab across all paired devices. |
+| `sync_tower` | Bi-directional | `{ "selectedTowerId": 2 }` | Syncs active tower selection. |
+| `sync_unit` | Bi-directional | `{ "selectedUnitId": 5 }` | Syncs highlighted/selected property unit. |
+| `sync_gallery` | Bi-directional | `{ "galleryPreview": { ... } }` | Syncs full-screen photo lightbox item. |
+| `sync_video` | Bi-directional | `{ "videoPlayback": { "isPlaying": true, "currentTime": 12.5 } }` | Syncs video play state and timestamp. |
+| `sync_booking_modal` | Bi-directional | `{ "bookingModal": 5 }` | Opens/closes booking dialog across screens. |
+| `client_list` | Client ➔ Server | None | Requests current connected client list. |
+| `client_pause` | Client ➔ Server | `{ "clientId": "target-uuid" }` | Pauses mirroring for a client screen. |
+| `client_resume` | Client ➔ Server | `{ "clientId": "target-uuid" }` | Resumes mirroring and resyncs latest state. |
+| `client_disconnect` | Client ➔ Server | `{ "clientId": "target-uuid" }` | Disconnects client and shows presenter disconnect overlay. |
 
 ---
 
@@ -435,80 +171,87 @@ components:
 
 In high-traffic real estate launches, multiple agents may click **"Book Now"** on the same unit simultaneously. 
 
-To eliminate race conditions, the backend uses **atomic SQL statements** instead of simple select-then-update checks:
+To eliminate race conditions, the Node.js PostgreSQL backend uses **atomic SQL statements within a single transaction**:
 
-```python
-# Executed within a single database transaction
-result = await db.execute(
-    update(Unit)
-    .where(Unit.id == payload.unit_id, Unit.status == UnitStatus.AVAILABLE)
-    .values(status=UnitStatus.BOOKED)
-)
+```typescript
+// Executed within an explicit PostgreSQL transaction
+await client.query('BEGIN');
 
-if result.rowcount == 0:
-    # Another agent claimed the unit milliseconds earlier!
-    raise HTTPException(status_code=409, detail="This unit has already been booked.")
+const updateRes = await client.query(
+  "UPDATE unit SET status = 'BOOKED' WHERE id = $1 AND status = 'AVAILABLE'",
+  [unitId]
+);
+
+if (updateRes.rowCount === 0) {
+  await client.query('ROLLBACK');
+  throw new CustomError('This unit has already been booked.', 409);
+}
+
+const insertRes = await client.query(
+  'INSERT INTO booking ("unitId", "customerName", phone, "bookedAt") VALUES ($1, $2, $3, NOW()) RETURNING *',
+  [unitId, customerName, phone]
+);
+
+await client.query('COMMIT');
 ```
 
 - **Guarantees**: Zero race conditions, absolute ACID transaction safety, no duplicate bookings.
 
 ---
 
-## 🧪 Real-Time Device Pairing Test Guide
+## 🧪 Real-Time Device Pairing & Presentation Manager Test Guide
 
-To verify multi-screen synchronization across devices locally:
+To verify multi-screen synchronization & Presentation Manager controls locally:
 
-1. Open `http://localhost:5173` in **Browser Window 1** (e.g. Sales Executive Kiosk).
-2. Click **"Pair Device"** in the top navigation bar to get the QR code or copy the room URL (e.g. `http://localhost:5173/?session=sales-room-101`).
-3. Open `http://localhost:5173/?session=sales-room-101` in **Browser Window 2** (or a tablet/mobile browser on the same network).
-4. Perform any action in Window 1:
-   - Switch between **Inventory**, **Gallery**, and **Videos** tabs.
-   - Click a **Tower** or **Unit**.
-   - Open an image in **Gallery Lightbox** or play a **Video**.
-   - Trigger the **Booking Dialog**.
-5. Observe **Window 2** update instantly in under 15ms!
+1. Open `http://localhost:5173` in **Browser Tab 1** (e.g. Executive Kiosk).
+2. Open `http://localhost:5173/?session=sales-room-101` in **Browser Tab 2** (Customer Screen).
+3. Click the **Connected Clients badge** in Tab 1 navbar to open the **Presentation Manager**.
+4. Observe both Tab 1 and Tab 2 listed with their detected Browser, OS, and Live status.
+5. Click **Pause Mirroring** on Tab 2 from Tab 1:
+   - Tab 2 status changes to `Mirroring Paused`.
+   - Navigating on Tab 1 no longer affects Tab 2.
+6. Click **Resume Mirroring** on Tab 2:
+   - Tab 2 instantly resynchronizes to Tab 1's current screen and state.
+7. Click **Disconnect Client** on Tab 2:
+   - Tab 2 receives the disconnect notification and shows the *"Disconnected from presentation by presenter"* overlay.
 
 ---
 
-## 🐳 Docker Deployment
+## ☁️ Cloud Deployment & Keep-Alive Ping
 
-To launch the full containerized production stack using Docker Compose:
+When deploying `kiosk-backend` to free or starter web hosting platforms like **Render**:
 
-```bash
-docker-compose up --build -d
-```
-
-- **Frontend Application**: `http://localhost:5173`
-- **Backend API Server**: `http://localhost:8000`
-
-To tear down services:
-```bash
-docker-compose down -v
-```
+- Render web services spin down after 15 minutes of inactivity.
+- To keep your backend active 24/7, set up an automated cron or UptimeRobot monitor pinging:
+  ```
+  https://your-app-name.onrender.com/ping
+  ```
+- **Response**:
+  ```json
+  {
+    "status": "healthy",
+    "message": "pong",
+    "app": "Aura Realty Kiosk Pro (Node.js + PostgreSQL)",
+    "timestamp": "2026-07-26T01:10:00.000Z"
+  }
+  ```
 
 ---
 
 ## 🔧 Troubleshooting & FAQ
 
-#### Q1: `Execution of scripts is disabled on this system` (Windows PowerShell error when running `activate.ps1`)
-**Solution**: Run PowerShell as Administrator and execute:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
+#### Q1: `error: relation "tower" does not exist`
+**Solution**: Ensure your PostgreSQL database is running and `DATABASE_URL` in `kiosk-backend/.env` is correct. The server automatically creates tables on startup.
 
-#### Q2: `ModuleNotFoundError: No module named 'app'`
-**Solution**: Ensure you execute Uvicorn commands from the `backend/` root directory where `app` resides:
-```bash
-cd backend
-uvicorn app.main:combined_app --reload --port 8000
-```
+#### Q2: `Connection refused on localhost:5432`
+**Solution**: Start your local PostgreSQL server or set `DATABASE_URL` to your remote PostgreSQL cloud URL (e.g., Supabase, Render Postgres, ElephantSQL).
 
 #### Q3: Socket.IO connection failed or CORS blocked
-**Solution**: Verify backend `CORS_ORIGINS` setting in `backend/app/core/config.py`. Ensure port `5173` is allowed.
+**Solution**: Verify `VITE_SOCKET_URL` in `frontend/.env` matches your backend base URL (e.g., `http://localhost:8000`).
 
 ---
 
 ### 👨‍💻 Maintainer & Senior Engineering Notes
-- Built using **FastAPI Async SQLAlchemy 2.0** engine for maximum request throughput.
+- Built using **Node.js, Express, TypeScript, and `pg`** for high request throughput and memory efficiency.
 - Frontend uses **Zustand** central store for clean state decoupling between Socket.IO events and UI reactivity.
-- Codebase is production-ready for scaling with PostgreSQL and Redis adapter for multi-instance Socket.IO clustering.
+- Persistent client identity and selective broadcasting ensure scalable multi-screen session management.

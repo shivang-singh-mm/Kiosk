@@ -11,10 +11,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.get('/', (_req: Request, res: Response) => {
+app.get(['/', '/ping', '/api/ping'], (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
+    message: 'pong',
     app: 'Aura Realty Kiosk Pro (Node.js + PostgreSQL)',
-    version: '1.0.0',
+    timestamp: new Date().toISOString(),
   });
 });
+
