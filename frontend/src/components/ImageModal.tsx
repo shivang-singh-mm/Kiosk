@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useKioskStore } from '../store/useKioskStore';
+import { mediaService } from '../services/indexeddb/media.service';
 import { X, Sparkles } from 'lucide-react';
 
 export const ImageModal: React.FC = () => {
   const { galleryPreview, setGalleryPreview } = useKioskStore();
+  const [resolvedImageUrl, setResolvedImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -15,7 +17,42 @@ export const ImageModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setGalleryPreview]);
 
+  useEffect(() => {
+    let isMounted = true;
+    let activeObjectUrl: string | null = null;
+
+    async function resolveMediaUrl() {
+      if (!galleryPreview) {
+        if (isMounted) setResolvedImageUrl(null);
+        return;
+      }
+
+      try {
+        const cached = await mediaService.getGalleryMedia(galleryPreview.id);
+        if (cached && cached.blob) {
+          activeObjectUrl = URL.createObjectURL(cached.blob);
+          if (isMounted) setResolvedImageUrl(activeObjectUrl);
+        } else {
+          if (isMounted) setResolvedImageUrl(galleryPreview.imageUrl);
+        }
+      } catch {
+        if (isMounted) setResolvedImageUrl(galleryPreview.imageUrl);
+      }
+    }
+
+    resolveMediaUrl();
+
+    return () => {
+      isMounted = false;
+      if (activeObjectUrl) {
+        URL.revokeObjectURL(activeObjectUrl);
+      }
+    };
+  }, [galleryPreview]);
+
   if (!galleryPreview) return null;
+
+  const displaySrc = resolvedImageUrl || galleryPreview.imageUrl;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-xl animate-fadeIn">
@@ -40,7 +77,7 @@ export const ImageModal: React.FC = () => {
         {/* Image Container */}
         <div className="relative flex-1 bg-slate-950 flex items-center justify-center p-2 overflow-hidden">
           <img
-            src={galleryPreview.imageUrl}
+            src={displaySrc}
             alt={galleryPreview.title}
             className="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl"
           />

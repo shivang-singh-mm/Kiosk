@@ -88,7 +88,7 @@ export const GalleryGrid: React.FC<GalleryGridProps> = ({ items }) => {
               key={item.id}
               onClick={() => {
                 if (!isNotAvailableOffline) {
-                  setGalleryPreview({ ...item, imageUrl: displayUrl });
+                  setGalleryPreview(item);
                 }
               }}
               className={`group relative h-52 sm:h-64 rounded-2xl overflow-hidden border transition-all ${

@@ -1,31 +1,57 @@
 import { Router, Request, Response } from 'express';
 import { BookingService } from './service';
 import { CustomError } from './repository';
+import { validateRequest } from '../../core/middleware/validate';
+import { bookUnitSchema } from './schema';
 
 const router = Router();
 const service = new BookingService();
 
-router.post('/book', async (req: Request, res: Response) => {
+/**
+ * @openapi
+ * /api/book:
+ *   post:
+ *     summary: Reserve a unit
+ *     description: Atomically reserves an available unit for a customer. Prevents concurrent double-booking.
+ *     tags:
+ *       - Booking
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BookingRequest'
+ *     responses:
+ *       201:
+ *         description: Unit successfully reserved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BookingResponse'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Unit already booked
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/book', validateRequest(bookUnitSchema), async (req: Request, res: Response) => {
   try {
     const { unitId, customerName, phone, sessionId } = req.body;
 
-    if (!unitId || typeof unitId !== 'number' || unitId <= 0) {
-      return res.status(400).json({ error: 'Valid unitId is required' });
-    }
-
-    if (!customerName || typeof customerName !== 'string' || customerName.trim().length < 2) {
-      return res.status(400).json({ error: 'Customer name must be at least 2 characters long' });
-    }
-
-    if (!phone || typeof phone !== 'string' || phone.replace(/[^\d]/g, '').length < 7) {
-      return res.status(400).json({ error: 'Phone number must contain at least 7 digits' });
-    }
-
     const booking = await service.bookUnit({
       unitId,
-      customerName: customerName.trim(),
-      phone: phone.trim(),
-      sessionId: sessionId || 'default',
+      customerName,
+      phone,
+      sessionId,
     });
 
     return res.status(201).json(booking);

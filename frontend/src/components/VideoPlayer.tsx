@@ -81,7 +81,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videos }) => {
 
   const handleSelectVideo = (video: VideoItem) => {
     const cacheInfo = cachedMap[video.id];
-    const displayUrl = cacheInfo?.displayUrl || video.videoUrl;
 
     if (!isOnline && !cacheInfo?.isCached) {
       return;
@@ -90,7 +89,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videos }) => {
     setVideoPlayback({
       videoId: video.id,
       title: video.title,
-      videoUrl: displayUrl,
+      videoUrl: video.videoUrl,
       isPlaying: true,
       currentTime: 0,
     });

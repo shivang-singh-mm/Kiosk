@@ -8,7 +8,7 @@ export function registerSocketEvents(): void {
   io.on('connection', (socket: Socket) => {
     const auth = socket.handshake.auth || {};
     const query = socket.handshake.query || {};
-    console.log(`Client connected: ${socket.id}`, auth);
+    console.log(`Client connected: ${socket.id}`);
 
     socket.on('join_session', async (data: any) => {
       const payload = typeof data === 'object' && data !== null ? data : { sessionId: String(data) };

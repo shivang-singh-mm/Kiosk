@@ -31,6 +31,7 @@ async function startServer() {
       console.log(`🚀 Node.js + Express + PostgreSQL Kiosk Backend Running`);
       console.log(`📡 HTTP Server: http://localhost:${PORT}`);
       console.log(`⚡ WebSocket Server: http://localhost:${PORT}/socket.io`);
+      console.log(`📚 Swagger Docs: http://localhost:${PORT}/docs`);
       console.log(`=======================================================`);
     });
   } catch (error) {
