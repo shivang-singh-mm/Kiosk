@@ -19,7 +19,7 @@ export const TowerSidebar: React.FC<TowerSidebarProps> = ({ towers }) => {
         </h2>
       </div>
 
-      <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible gap-3 pb-2 lg:pb-0 scrollbar-thin">
+      <div className="flex flex-col gap-3">
         {towers.map((tower) => {
           const isSelected = selectedTowerId === tower.id;
           const totalUnits = tower.units.length;
@@ -31,7 +31,7 @@ export const TowerSidebar: React.FC<TowerSidebarProps> = ({ towers }) => {
             <button
               key={tower.id}
               onClick={() => setSelectedTowerId(tower.id)}
-              className={`min-w-[240px] sm:min-w-[260px] lg:min-w-0 w-full text-left p-3 sm:p-4 rounded-xl transition-all duration-200 border relative overflow-hidden shrink-0 ${
+              className={`w-full text-left p-3 sm:p-4 rounded-xl transition-all duration-200 border relative overflow-hidden ${
                 isSelected
                   ? 'bg-gradient-to-r from-indigo-900/50 via-slate-900 to-slate-900 border-indigo-500/60 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/40'
                   : 'bg-slate-950/40 border-slate-800/80 hover:bg-slate-800/40 text-slate-400 hover:border-slate-700'
