@@ -8,50 +8,26 @@ React 18, TypeScript, and Vite single-page application providing real-time multi
 
 ```
 frontend/
-├── Dockerfile                    # Multi-stage production build configuration using Nginx
-├── nginx.conf                    # Nginx web server configuration and API/Socket proxy rules
-├── package.json                  # Frontend dependencies, build configurations, and scripts
-├── postcss.config.js             # PostCSS configuration for TailwindCSS
-├── tailwind.config.js            # TailwindCSS theme, fonts, animations, and color palette
-├── tsconfig.json                 # TypeScript compiler configuration
-├── vite.config.ts                # Vite build options, dev server host, and proxy settings
-├── index.html                    # HTML document entry point
-├── .env                          # Local environment variables (VITE_API_URL, VITE_SOCKET_URL)
-└── src/                          # Application source code root
-    ├── App.tsx                   # Root React component managing socket setup and global modals
-    ├── main.tsx                  # React DOM entry point configuring QueryClientProvider
-    ├── index.css                 # Global CSS styles, TailwindCSS directives, and glassmorphism utilities
-    ├── components/               # Reusable UI component library
-    │   ├── BookingModal.tsx      # Modal form for reserving property units (online or queued offline)
-    │   ├── ErrorState.tsx        # Fallback error card with retry button
-    │   ├── GalleryGrid.tsx       # Photo gallery grid with IndexedDB Blob caching & offline badges
-    │   ├── ImageModal.tsx        # Full-screen image lightbox synchronized across room screens
-    │   ├── InventoryGrid.tsx     # Interactive apartment grid with status tags and booking triggers
-    │   ├── Loader.tsx            # Animated spinner loading indicator
-    │   ├── Navbar.tsx            # Navigation header with room ID, client count, and online/offline badge
-    │   ├── PendingSyncModal.tsx  # Modal displaying queued offline bookings with deletion support
-    │   ├── PresentationManager.tsx # Executive drawer listing connected clients with Pause/Resume/Disconnect controls
-    │   ├── QRModal.tsx           # Modal displaying pairing QR code and shareable session link
-    │   ├── Toast.tsx             # Toast notification container and individual alert rendering
-    │   ├── TowerSidebar.tsx      # Residential tower selection menu
-    │   ├── UnitCard.tsx          # Card displaying unit details, pricing, and availability status
-    │   └── VideoPlayer.tsx       # HD video player with real-time sync & IndexedDB Blob offline cache
-    ├── pages/                    # View pages rendered based on active navigation state
-    │   ├── GalleryPage.tsx       # Media gallery page with offline cache fallback
-    │   ├── InventoryPage.tsx     # Inventory page embedding TowerSidebar, search filters, and InventoryGrid
-    │   └── VideosPage.tsx        # Video showcase page with offline cache fallback
-    ├── services/                 # External communication & storage services
-    │   ├── api.ts                # Axios HTTP client methods (getGallery, getVideos, getInventory, bookUnit)
-    │   ├── socket.ts             # Socket.IO client instance and persistent client identity helper
-    │   └── indexeddb/            # Offline-first storage services
-    │       ├── bookingQueue.service.ts # Service managing queued offline bookings in IndexedDB
-    │       ├── db.ts             # IndexedDB schema definition and initialization using 'idb'
-    │       └── media.service.ts  # Service managing gallery image and video Blob caching in IndexedDB
-    ├── store/                    # Global state management
-    │   └── useKioskStore.ts      # Zustand store managing UI state, Socket events, and FIFO offline sync
-    └── types/                    # Shared TypeScript interfaces
-        └── index.ts              # Type definitions (Unit, Tower, ConnectedClient, PendingBookingRecord, etc.)
+├── Dockerfile
+├── nginx.conf
+├── package.json
+├── index.html
+└── src/
+    ├── App.tsx
+    ├── main.tsx
+    ├── components/
+    ├── pages/
+    ├── services/
+    │   └── indexeddb/
+    ├── store/
+    └── types/
 ```
+
+- **`components/`**: Reusable UI presentation components (modals, grids, drawers, status badges).
+- **`pages/`**: Main view pages (`InventoryPage`, `GalleryPage`, `VideosPage`).
+- **`services/`**: REST API client (Axios), Socket.IO client, and IndexedDB media/booking queue services.
+- **`store/`**: Central Zustand store managing reactive state, Socket events, and offline background sync logic.
+- **`types/`**: Shared TypeScript type definitions and interfaces.
 
 ---
 

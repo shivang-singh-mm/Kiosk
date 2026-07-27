@@ -1,4 +1,4 @@
-# Aura Realty Kiosk Pro — Project Overview
+# Kiosk Pro — Project Overview
 
 A production-grade, feature-rich **Real-Time Sales Kiosk Application** engineered for luxury real estate galleries and executive presentation suites. Built with **Node.js**, **Express**, **TypeScript**, **PostgreSQL**, **Socket.IO**, **React 18**, **Vite**, **Zustand**, and **TailwindCSS**.
 
@@ -63,7 +63,6 @@ graph TD
 | **Atomic Unit Reservation** | Database Concurrency | Executes atomic PostgreSQL transactions (`UPDATE unit SET status='BOOKED' WHERE id=$1 AND status='AVAILABLE'`) returning `409 Conflict` if claimed simultaneously. |
 | **Inventory Search & Filter** | Inventory Management | Real-time text search by unit number and status filters (`ALL`, `AVAILABLE`, `BOOKED`). |
 | **Device Pairing QR Modal** | Presentation UX | Generates an instant pairing QR code and shareable session URL to quickly link tablets and secondary screens. |
-| **Render Keep-Alive Ping** | Cloud Maintenance | `/ping` & `/api/ping` endpoints returning healthy status and pong message for external uptime monitoring. |
 
 ---
 
@@ -82,7 +81,7 @@ graph TD
 - **Web Framework**: Express 4.19
 - **WebSockets**: Socket.IO 4.7
 - **Database Driver**: `pg` 8.11 (PostgreSQL Connection Pool)
-- **Development Tooling**: `ts-node-dev` & `dotenv`
+- **Validation & Docs**: Zod 3.23 & Swagger UI Express / Swagger JSDoc
 
 ### Database
 - **Engine**: PostgreSQL 16
@@ -90,43 +89,6 @@ graph TD
 ### Infrastructure & Deployment
 - **Containerization**: Docker & Docker Compose
 - **Web Server / Proxy**: Nginx (Frontend multi-stage container build)
-
----
-
-## 📂 Project Structure
-
-```
-sales-kiosk-app/
-├── docker-compose.yml            # Multi-container orchestration (PostgreSQL, Backend, Frontend)
-├── .gitignore                    # Workspace ignore rules
-├── README.md                     # Root project documentation
-├── kiosk-backend/                # Node.js + Express + TypeScript + PostgreSQL Backend
-│   ├── Dockerfile                # Multi-stage production Docker build
-│   ├── package.json              # Backend dependencies & scripts
-│   ├── tsconfig.json             # TypeScript compiler settings
-│   ├── .env                      # Environment configuration
-│   ├── README.md                 # Backend-specific documentation
-│   └── src/
-│       ├── app.ts                # Express application & middleware configuration
-│       ├── server.ts             # HTTP & Socket.IO server setup & router mounting
-│       ├── seed.ts               # PostgreSQL table creation & seed execution
-│       ├── core/                 # Environment config, DB pool, Socket instance
-│       └── modules/              # Domain modules (booking, gallery, inventory, video, websocket)
-└── frontend/                     # React 18 + Vite + TailwindCSS Frontend
-    ├── Dockerfile                # Multi-stage Nginx build
-    ├── nginx.conf                # Nginx proxy configuration
-    ├── package.json              # Frontend dependencies & scripts
-    ├── vite.config.ts            # Vite build & dev server config
-    ├── README.md                 # Frontend-specific documentation
-    └── src/
-        ├── App.tsx               # Root component with Socket & Network listeners
-        ├── main.tsx              # React entry point with React Query Provider
-        ├── components/           # 14 Reusable UI components
-        ├── pages/                # InventoryPage, GalleryPage, VideosPage
-        ├── services/             # REST API, Socket.IO, and IndexedDB services
-        ├── store/                # Zustand global state store & offline sync logic
-        └── types/                # Shared TypeScript type definitions
-```
 
 ---
 
@@ -184,6 +146,7 @@ VITE_SOCKET_URL=http://localhost:8000
 
 - **Frontend URL**: `http://localhost:5173`
 - **Backend API**: `http://localhost:8000/api`
+- **Swagger Docs**: `http://localhost:8000/docs`
 - **Keep-Alive Ping**: `http://localhost:8000/ping`
 
 ---
@@ -212,34 +175,15 @@ docker-compose down -v
 
 ---
 
-## 📜 Available Scripts
+## 🔮 Future Scope
 
-### Backend (`kiosk-backend/package.json`)
+1. **PIN-Based Multi-Session Streams**:
+   - **Idea**: Enable sales executives to generate a secure 4-digit PIN per presentation, isolating multiple concurrent sales rooms without session collisions.
+   - **Implementation**: Store PIN-to-Session mappings in Redis/Socket.IO room namespaces and require PIN authentication during socket connection handshakes.
 
-| Script | Command | Description |
-| :--- | :--- | :--- |
-| `npm run dev` | `ts-node-dev --respawn --transpile-only src/server.ts` | Starts backend development server with auto-reload. |
-| `npm run build` | `tsc` | Compiles TypeScript source files to `dist/`. |
-| `npm run start` | `node dist/server.js` | Runs compiled production JavaScript build. |
+2. **FFmpeg Video Transcoding & Adaptive Bitrate Streaming**:
+   - **Idea**: Integrate FFmpeg processing into video management for smooth, stutter-free playback across varying network conditions.
 
-### Frontend (`frontend/package.json`)
-
-| Script | Command | Description |
-| :--- | :--- | :--- |
-| `npm run dev` | `vite` | Starts Vite local development server. |
-| `npm run build` | `tsc && vite build` | Type-checks code and compiles production bundle to `dist/`. |
-| `npm run lint` | `eslint . --ext ts,tsx ...` | Runs ESLint analysis across TypeScript & TSX files. |
-| `npm run preview` | `vite preview` | Serves production build locally for previewing. |
-
----
-
-## 🎨 Coding Style & Conventions
-
-- **Modular Architecture**: Feature domains (`booking`, `gallery`, `inventory`, `video`, `websocket`) strictly isolated.
-- **Layered Enterprise Pattern**: Separation of concerns across `router.ts` (HTTP layer), `service.ts` (business logic), and `repository.ts` (database access).
-- **Naming Conventions**:
-  - Components: `PascalCase` (e.g., `PresentationManager.tsx`, `BookingModal.tsx`).
-  - Functions & Variables: `camelCase` (e.g., `syncPendingBookings`, `getPersistentClientId`).
-  - Interfaces & Types: `PascalCase` (e.g., `ConnectedClient`, `GalleryCacheRecord`).
-  - CSS Styling: Utility-first TailwindCSS classes with glassmorphism overlays and Dark Mode default palette.
-- **TypeScript**: Strict type mode enabled (`"strict": true` in `tsconfig.json`) across both frontend and backend codebases.
+3. **Real-Time Sales Telemetry & Engagement Analytics**:
+   - **Idea**: Track buyer interest metrics such as most-viewed units, image dwell times, and video completion rates during presentations.
+   - **Implementation**: Send telemetry events over Socket.IO and aggregate engagement analytics in PostgreSQL analytics views.
